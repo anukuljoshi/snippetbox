@@ -11,7 +11,7 @@ import (
 func (app *application) home(w http.ResponseWriter,  r *http.Request){
 	// return NotFound if url does not match "/" exactly
 	if r.URL.Path!="/"{
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
 	// read the template file
@@ -22,14 +22,12 @@ func (app *application) home(w http.ResponseWriter,  r *http.Request){
 	}
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		app.errorLog.Print(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, err)
 		return
 	}
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		app.errorLog.Print(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, err)
 	}
 }
 
@@ -38,7 +36,7 @@ func (app *application) viewSnippet(w http.ResponseWriter,  r *http.Request){
 	// get id sent in query params
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))	
 	if err != nil || id < 1{
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
 	// use FprintF to write formatted string to response writer
@@ -50,8 +48,7 @@ func (app *application) createSnippet(w http.ResponseWriter,  r *http.Request){
 	// check if  request method is POST
 	if r.Method != "POST"{
 		w.Header().Set("Allow", http.MethodPost)
-		// use http.Error to send 405 status code and "Method Not Allowed" message
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		app.clientError(w, http.StatusMethodNotAllowed)
 		return	
 	}
 	w.Write([]byte("create a new snippet"))
