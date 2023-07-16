@@ -3,13 +3,12 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 )
 
 // handler for catch all
-func home(w http.ResponseWriter,  r *http.Request){
+func (app *application) home(w http.ResponseWriter,  r *http.Request){
 	// return NotFound if url does not match "/" exactly
 	if r.URL.Path!="/"{
 		http.NotFound(w, r)
@@ -23,19 +22,19 @@ func home(w http.ResponseWriter,  r *http.Request){
 	}
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Print(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Print(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
 // handler for viewing a snippet
-func viewSnippet(w http.ResponseWriter,  r *http.Request){
+func (app *application) viewSnippet(w http.ResponseWriter,  r *http.Request){
 	// get id sent in query params
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))	
 	if err != nil || id < 1{
@@ -47,7 +46,7 @@ func viewSnippet(w http.ResponseWriter,  r *http.Request){
 }
 
 // handler for viewing a snippet
-func createSnippet(w http.ResponseWriter,  r *http.Request){
+func (app *application) createSnippet(w http.ResponseWriter,  r *http.Request){
 	// check if  request method is POST
 	if r.Method != "POST"{
 		w.Header().Set("Allow", http.MethodPost)

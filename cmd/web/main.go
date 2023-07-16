@@ -1,11 +1,33 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
+	"os"
 )
 
+// Define an application struct to hold the application-wide dependencies
+type application struct {
+	errorLog *log.Logger
+	infoLog *log.Logger
+}
+
 func main() {
+	// define a new command line flag "addr" to specify to host address
+	addr := flag.String("addr", ":4000", "HTTP network address")
+	flag.Parse()
+
+	// create a new logger for info messages
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	// create a new logger for info messages
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	// initialize an application struct with dependencies
+	app := &application{
+		errorLog: errorLog,
+		infoLog: infoLog,
+	}
 	// create a new ServeMux
 	// register home function as handler for "/" path
 	mux := http.NewServeMux()
@@ -18,15 +40,21 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
 	// other application routes
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", viewSnippet)
-	mux.HandleFunc("/snippet/create", createSnippet)
+	mux.HandleFunc("/", app.home)
+	mux.HandleFunc("/snippet/view", app.viewSnippet)
+	mux.HandleFunc("/snippet/create", app.createSnippet)
 
+	// initialize a new http.Server struct
+	server := &http.Server{
+		Addr: *addr,
+		Handler: mux,
+		ErrorLog: errorLog,
+	}
 	// use http.ListenAndServe to create a new web server
 	// pass in two parameters
 	// 1. TCP network address
 	// 2. ServeMux created earlier
-	log.Println("Starting server on :4000")
-	err := http.ListenAndServe(":4000", mux)
-	log.Fatal(err)
+	infoLog.Printf("Starting server on %s", *addr)
+	err := server.ListenAndServe()
+	errorLog.Fatal(err)
 }
