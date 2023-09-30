@@ -3,7 +3,7 @@ package main
 import "net/http"
 
 // returns a servemux containing our application routes
-func (app *application) routes() *http.ServeMux {
+func (app *application) routes() http.Handler {
 	// create a new ServeMux
 	// register home function as handler for "/" path
 	mux := http.NewServeMux()
@@ -20,5 +20,5 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("/snippet/view", app.viewSnippet)
 	mux.HandleFunc("/snippet/create", app.createSnippet)
 
-	return mux
+	return secureHeaders(mux)
 }
