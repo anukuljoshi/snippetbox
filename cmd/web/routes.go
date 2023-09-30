@@ -3,31 +3,35 @@ package main
 import (
 	"net/http"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 )
 
 // returns a servemux containing our application routes
 func (app *application) routes() http.Handler {
-	// create a new ServeMux
-	// register home function as handler for "/" path
-	mux := http.NewServeMux()
+	// initial router
+	router := httprouter.New()
+
+	// change the default not found method for httprouter
+	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.notFound(w)
+	})
 
 	// create a file server for serving static files
 	fileServer := http.FileServer(http.Dir("./ui/static"))
-	// Use the mux.Handle() function to register the file server as the handler for
-	// all URL paths that start with "/static/". For matching paths, we strip the
-	// "/static" prefix before the request reaches the file
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+	// create route to server static files
+	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
 
 	// other application routes
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.viewSnippet)
-	mux.HandleFunc("/snippet/create", app.createSnippet)
+	router.HandlerFunc(http.MethodGet, "/", app.home)
+	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.viewSnippet)
+	router.HandlerFunc(http.MethodGet, "/snippet/create", app.createSnippet)
+	router.HandlerFunc(http.MethodPost, "/snippet/create", app.createSnippetPost)
 
 	// middleware chain with our standard middlewares
 	// which will be used for every request
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 
-	// return standard middleware chain followed by mux
-	return standard.Then(mux)
+	// return standard middleware chain followed by router
+	return standard.Then(router)
 }
