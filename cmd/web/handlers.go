@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 
@@ -22,24 +21,10 @@ func (app *application) home(w http.ResponseWriter,  r *http.Request){
 		app.serverError(w, err)
 		return
 	}
-	// read the template file
-	files := []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/pages/home.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-	}
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	data := &templateData{
+	// use the render helper method
+	app.render(w, http.StatusOK, "home.tmpl.html", &templateData{
 		Snippets: snippets,
-	}
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	})
 }
 
 // handler for viewing a snippet
@@ -58,25 +43,10 @@ func (app *application) viewSnippet(w http.ResponseWriter,  r *http.Request){
 		}
 		app.serverError(w, err)
 	}
-	// initialize a slice containing paths to view.tmpl
-	files := []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-		"./ui/html/pages/view.tmpl.html",
-	}
-	// parse template files
-	ts, err := template.ParseFiles(files...)
-	if err!=nil {
-		app.serverError(w, err)
-	}
-
-	data := &templateData{
+	// use render helper method
+	app.render(w, http.StatusOK, "view.tmpl.html", &templateData{
 		Snippet: snippet,
-	}
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err!=nil {
-		app.serverError(w, err)
-	}
+	})
 }
 
 // handler for creating a snippet
