@@ -1,6 +1,10 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/justinas/alice"
+)
 
 // returns a servemux containing our application routes
 func (app *application) routes() http.Handler {
@@ -20,5 +24,10 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("/snippet/view", app.viewSnippet)
 	mux.HandleFunc("/snippet/create", app.createSnippet)
 
-	return app.recoverPanic(app.logRequest(secureHeaders(mux)))
+	// middleware chain with our standard middlewares
+	// which will be used for every request
+	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+
+	// return standard middleware chain followed by mux
+	return standard.Then(mux)
 }
