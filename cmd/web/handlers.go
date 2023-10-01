@@ -29,8 +29,15 @@ type userSignupForm struct {
 	validator.Validator `form:"-"`
 }
 
+// struct to hold form data and embedded validator
+// added struct tags for decoding form field names to struct fields
+type userLoginForm struct {
+	Email string `form:"email"`
+	Password string `form:"password"`
+	validator.Validator `form:"-"`
+}
 
-// handler for catch all
+// handler for home
 func (app *application) home(w http.ResponseWriter,  r *http.Request){
 	snippets, err := app.snippets.Latest()
 	if err!=nil {
@@ -137,7 +144,7 @@ func (app *application) createSnippetPost(w http.ResponseWriter, r *http.Request
 // user handlers
 func (app *application) userSignUp(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
-	data.Form = &userSignupForm{}
+	data.Form = userSignupForm{}
 	app.render(w, http.StatusOK, "signup.tmpl.html", data)
 }
 
@@ -207,11 +214,65 @@ func (app *application) userSignUpPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "user login page")
+	data := app.newTemplateData(r)
+	data.Form = userLoginForm{}
+	app.render(w, http.StatusOK,  "login.tmpl.html", data)
 }
 
 func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "user login page post")
+	var form userLoginForm
+	err := app.decodePostForm(r, &form)
+	if err!=nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	// form validation
+	// email is not empty
+	form.CheckField(
+		validator.NotBlank(form.Email),
+		"email",
+		"This field cannot be empty",
+	)
+	// email is valid
+	form.CheckField(
+		validator.Matches(form.Email, validator.EmailRX),
+		"email",
+		"This field must be a valid email address",
+	)
+	// password is not blank
+	form.CheckField(
+		validator.NotBlank(form.Password),
+		"password",
+		"This field cannot be empty",
+	)
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusBadRequest, "login.tmpl.html", data)
+		return
+	}
+	// check if credentials are correct
+	id, err := app.users.Authenticate(form.Email, form.Password)
+	if err!=nil {
+		// add non field error to form if invalid credentials
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddNonFieldError("Email or Password is incorrect")
+			data :=  app.newTemplateData(r)
+			data.Form = form
+			app.render(w, http.StatusBadRequest, "login.tmpl.html", data)
+			return
+		}
+		app.serverError(w, err)
+		return
+	}
+	// use RenewToken() method on the current session
+	err = app.sessionManager.RenewToken(r.Context())
+	if err!=nil {
+		app.serverError(w, err)
+		return
+	}
+	app.sessionManager.Put(r.Context(), "authenticatedUserId", id)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
