@@ -7,7 +7,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -21,6 +24,7 @@ type application struct {
 	snippets *models.SnippetModel
 	templateCache map[string]*template.Template
 	formDecoder *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -54,6 +58,13 @@ func main() {
 	// initialize form decoder instance
 	formDecoder := form.NewDecoder()
 
+	// initialize new SessionManager
+	var sessionManager = scs.New()
+	// use mysql as db
+	sessionManager.Store = mysqlstore.New(db)
+	// set Lifetime to 12 hours, session automatically expires after 12 hours
+	sessionManager.Lifetime = 12 * time.Hour
+
 	// initialize an application struct with dependencies
 	app := &application{
 		errorLog: errorLog,
@@ -61,6 +72,7 @@ func main() {
 		snippets: &models.SnippetModel{DB: db},
 		templateCache: templateCache,
 		formDecoder: formDecoder,
+		sessionManager: sessionManager,
 	}
 	// initialize a new http.Server struct
 	server := &http.Server{
