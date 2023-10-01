@@ -20,6 +20,16 @@ type snippetCreateForm struct {
 	validator.Validator `form:"-"`
 }
 
+// struct to hold form data and embedded validator
+// added struct tags for decoding form field names to struct fields
+type userSignUpForm struct {
+	Name string `form:"name"`
+	Email string `form:"email"`
+	Password string `form:"password"`
+	validator.Validator `form:"-"`
+}
+
+
 // handler for catch all
 func (app *application) home(w http.ResponseWriter,  r *http.Request){
 	snippets, err := app.snippets.Latest()
@@ -126,10 +136,59 @@ func (app *application) createSnippetPost(w http.ResponseWriter, r *http.Request
 
 // user handlers
 func (app *application) userSignUp(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "user sign up page")
+	data := app.newTemplateData(r)
+	data.Form = &userSignUpForm{}
+	app.render(w, http.StatusOK, "signup.tmpl.html", data)
 }
 
 func (app *application) userSignUpPost(w http.ResponseWriter, r *http.Request) {
+	// initialize empty snippetCreateForm
+	var form userSignUpForm
+	// call decodePostForm helper method to decode data into snippetCreateForm struct
+	err := app.decodePostForm(r, &form)
+	if err!=nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	// use our custom validator to check for validations
+	// validations check for title
+	// 1. name is not empty
+	form.CheckField(
+		validator.NotBlank(form.Name),
+		"name",
+		"This field cannot be blank",
+	)
+	// email is not empty
+	form.CheckField(
+		validator.NotBlank(form.Email),
+		"email",
+		"This field cannot be blank",
+	)
+	// valid email
+	form.CheckField(
+		validator.Matches(form.Email, validator.EmailRX),
+		"email",
+		"This field must be a valid email address",
+	)
+	// password it not empty
+	form.CheckField(
+		validator.NotBlank(form.Password),
+		"password",
+		"This field cannot be blank",
+	)
+	// password len is at least 8
+	form.CheckField(
+		validator.MinLen(form.Password, 8),
+		"password",
+		"This field must be at least 8 characters long",
+	)
+	// re render form with data if invalid
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusBadRequest, "signup.tmpl.html", data)
+		return
+	}
 	fmt.Fprintf(w, "user sign up page post")
 }
 

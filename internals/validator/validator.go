@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -51,4 +52,17 @@ func PermittedInt(value int, permittedValues ...int) bool {
 		}
 	}
 	return false
+}
+
+// check if string is at least limit chars long
+func MinLen(value string, limit int) bool {
+	return utf8.RuneCountInString(value)>=8	
+}
+
+// regex for checking email
+var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+
+// return true if value matches regular expression
+func Matches(value string, rx *regexp.Regexp) bool {
+	return rx.MatchString(value)
 }
