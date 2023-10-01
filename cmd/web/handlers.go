@@ -12,11 +12,12 @@ import (
 )
 
 // struct to hold form data and embedded validator
+// added struct tags for decoding form field names to struct fields
 type snippetCreateForm struct {
-	Title string
-	Content string
-	Expires int
-	validator.Validator
+	Title string `form:"title"`
+	Content string `form:"content"`
+	Expires int `form:"expires"`
+	validator.Validator `form:"-"`
 }
 
 // handler for catch all
@@ -68,27 +69,13 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 
 // handler for creating a snippet
 func (app *application) createSnippetPost(w http.ResponseWriter, r *http.Request) {
-	// call r.ParseForm() to parse and add POST request body data in r.PostForm map
-	err := r.ParseForm()
+	// initialize empty snippetCreateForm
+	var form snippetCreateForm
+	// call decodePostForm helper method to decode data into snippetCreateForm struct
+	var err = app.decodePostForm(r, &form)
 	if err!=nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
-	}
-	// use Get method on r.PostForm to get POST data
-	title := r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
-	// r.PostForm.Get() return string
-	// convert string to int
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
-	if err!=nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-	// initialize instance of snippetCreateForm to hold form data and empty fields errors
-	form := snippetCreateForm{
-		Title: title,
-		Content: content,
-		Expires: expires,
 	}
 	// use our custom validator to check for validations
 	// validations check for title

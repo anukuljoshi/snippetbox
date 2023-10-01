@@ -2,9 +2,12 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
+
+	"github.com/go-playground/form/v4"
 )
 
 // serverError writes error message and stack trace to error log
@@ -48,4 +51,26 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 	w.WriteHeader(status)
 	// write contents of buffer to response writer
 	buf.WriteTo(w)
+}
+
+// helper method to decode PostForm data
+// dst is target destination we want the data to be decoded into
+func (app *application) decodePostForm(r *http.Request, dst any) error {
+	var err = r.ParseForm()
+	if err!=nil {
+		return err
+	}
+	// call Decode on our formDecoder instance with destination dst
+	err = app.formDecoder.Decode(dst, r.PostForm)
+	if err!=nil {
+		// check type of error
+		// panic if error is InvalidDecodeError
+		var invalidDecodeError *form.InvalidDecoderError
+		if errors.As(err, &invalidDecodeError) {
+			panic(err)
+		}
+		// return if other error
+		return err
+	}
+	return nil
 }
