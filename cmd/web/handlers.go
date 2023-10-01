@@ -123,3 +123,24 @@ func (app *application) createSnippetPost(w http.ResponseWriter, r *http.Request
 	// redirect to snippet view for the created snippet id
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
+
+// user handlers
+func (app *application) userSignUp(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "user sign up page")
+}
+
+func (app *application) userSignUpPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "user sign up page post")
+}
+
+func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "user login page")
+}
+
+func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "user login page post")
+}
+
+func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "user logout page")
+}

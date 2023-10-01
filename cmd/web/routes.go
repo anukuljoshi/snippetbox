@@ -30,6 +30,13 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.createSnippet))
 	router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.createSnippetPost))
 
+	// user routes
+	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignUp))
+	router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignUpPost))
+	router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
+	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
+	router.Handler(http.MethodPost, "/user/logout", dynamic.ThenFunc(app.userLogoutPost))
+
 	// middleware chain with our standard middlewares
 	// which will be used for every request
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
