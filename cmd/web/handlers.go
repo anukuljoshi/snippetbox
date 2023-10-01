@@ -5,19 +5,18 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
-	"unicode/utf8"
 
 	"github.com/julienschmidt/httprouter"
 	"snippetbox.anukuljoshi/internals/models"
+	"snippetbox.anukuljoshi/internals/validator"
 )
 
-// struct to hold form data and field errors
+// struct to hold form data and embedded validator
 type snippetCreateForm struct {
 	Title string
 	Content string
 	Expires int
-	FieldErrors map[string]string
+	validator.Validator
 }
 
 // handler for catch all
@@ -90,28 +89,37 @@ func (app *application) createSnippetPost(w http.ResponseWriter, r *http.Request
 		Title: title,
 		Content: content,
 		Expires: expires,
-		FieldErrors: make(map[string]string),
 	}
+	// use our custom validator to check for validations
 	// validations check for title
 	// 1. title is not empty
+	form.CheckField(
+		validator.NotBlank(form.Title),
+		"title",
+		"This field cannot be blank",
+	)
 	// 2. title is less than 100 characters
-	if strings.TrimSpace(form.Title)=="" {
-		form.FieldErrors["title"] = "This field cannot be blank"
-	}else if utf8.RuneCountInString(form.Title)>100 {
-		form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
-	}
+	form.CheckField(
+		validator.MaxLen(form.Title, 100),
+		"title",
+		"This field cannot be more than 100 characters long",
+	)
 	// validations check for content
 	// 1. content is not empty
-	if strings.TrimSpace(form.Content)=="" {
-		form.FieldErrors["content"] = "This field cannot be blank"
-	}
+	form.CheckField(
+		validator.NotBlank(form.Content),
+		"content",
+		"This field cannot be blank",
+	)
 	// validation checks for expires
 	// expires should be either 1, 7 or 365
-	if form.Expires!=1 && form.Expires!=7 && form.Expires!=365 {
-		form.FieldErrors["form.Expires"] = "This field must be equal to 1, 7 or 365"
-	}
+	form.CheckField(
+		validator.PermittedInt(form.Expires, 1, 7, 365),
+		"expires",
+		"This field must be equal to 1, 7 or 365",
+	)
 	// return bad request if form.FieldErrors are present
-	if len(form.FieldErrors)>0 {
+	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, http.StatusBadRequest, "create.tmpl.html", data)
