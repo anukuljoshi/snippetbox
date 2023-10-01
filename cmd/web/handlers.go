@@ -22,7 +22,7 @@ type snippetCreateForm struct {
 
 // struct to hold form data and embedded validator
 // added struct tags for decoding form field names to struct fields
-type userSignUpForm struct {
+type userSignupForm struct {
 	Name string `form:"name"`
 	Email string `form:"email"`
 	Password string `form:"password"`
@@ -137,13 +137,13 @@ func (app *application) createSnippetPost(w http.ResponseWriter, r *http.Request
 // user handlers
 func (app *application) userSignUp(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
-	data.Form = &userSignUpForm{}
+	data.Form = &userSignupForm{}
 	app.render(w, http.StatusOK, "signup.tmpl.html", data)
 }
 
 func (app *application) userSignUpPost(w http.ResponseWriter, r *http.Request) {
 	// initialize empty snippetCreateForm
-	var form userSignUpForm
+	var form userSignupForm
 	// call decodePostForm helper method to decode data into snippetCreateForm struct
 	err := app.decodePostForm(r, &form)
 	if err!=nil {
