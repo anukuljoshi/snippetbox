@@ -51,6 +51,12 @@ func (app *application) home(w http.ResponseWriter,  r *http.Request){
 	app.render(w, http.StatusOK, "home.tmpl.html", data)
 }
 
+// about section for app
+func (app *application) about(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	app.render(w, http.StatusOK, "about.tmpl.html", data)
+}
+
 // handler for viewing a snippet
 func (app *application) viewSnippet(w http.ResponseWriter,  r *http.Request){
 	params := httprouter.ParamsFromContext(r.Context())
