@@ -40,6 +40,7 @@ func (app *application) routes() http.Handler {
 	// protected routes
 	router.Handler(http.MethodGet, "/snippet/create", protected.ThenFunc(app.createSnippet))
 	router.Handler(http.MethodPost, "/snippet/create", protected.ThenFunc(app.createSnippetPost))
+	router.Handler(http.MethodGet, "/user/account", protected.ThenFunc(app.userAccount))
 	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
 
 	// middleware chain with our standard middlewares

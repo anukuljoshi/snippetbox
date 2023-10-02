@@ -293,3 +293,19 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+func (app *application) userAccount(w http.ResponseWriter, r *http.Request) {
+	id := app.sessionManager.GetInt(r.Context(), "authenticatedUserId")
+	user, err := app.users.Get(id)
+	if err!=nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			return
+		}
+		app.serverError(w, err)
+		return
+	}
+	data := app.newTemplateData((r))
+	data.User = user
+	app.render(w, http.StatusOK, "account.tmpl.html", data)
+}
