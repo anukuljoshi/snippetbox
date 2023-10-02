@@ -50,7 +50,7 @@ func MaxLen(value string, limit int) bool {
 }
 
 // check if value is one of permitted values
-func PermittedInt(value int, permittedValues ...int) bool {
+func PermittedValue[T comparable](value T, permittedValues ...T) bool {
 	for _, pv := range permittedValues {
 		if value==pv {
 			return true
