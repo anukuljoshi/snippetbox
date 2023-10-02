@@ -41,6 +41,8 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, "/snippet/create", protected.ThenFunc(app.createSnippet))
 	router.Handler(http.MethodPost, "/snippet/create", protected.ThenFunc(app.createSnippetPost))
 	router.Handler(http.MethodGet, "/user/account", protected.ThenFunc(app.userAccount))
+	router.Handler(http.MethodGet, "/user/password/update", protected.ThenFunc(app.updatePassword))
+	router.Handler(http.MethodPost, "/user/password/update", protected.ThenFunc(app.updatePasswordPost))
 	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
 
 	// middleware chain with our standard middlewares

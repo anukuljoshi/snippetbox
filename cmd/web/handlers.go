@@ -313,3 +313,72 @@ func (app *application) userAccount(w http.ResponseWriter, r *http.Request) {
 	data.User = user
 	app.render(w, http.StatusOK, "account.tmpl.html", data)
 }
+
+type updatePasswordForm struct {
+	CurrentPassword string `form:"current_password"`
+	NewPassword string `form:"new_password"`
+	ConfirmPassword string `form:"confirm_password"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) updatePassword(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	data.Form = updatePasswordForm{}
+	app.render(w, http.StatusOK, "update_password.tmpl.html", data)
+}
+
+func (app *application) updatePasswordPost(w http.ResponseWriter, r *http.Request) {
+	var form updatePasswordForm
+	var err = app.decodePostForm(r, &form)
+	if err!=nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	form.CheckField(
+		validator.NotBlank(form.CurrentPassword),
+		"current_password",
+		"This field cannot be blank",
+	)
+	form.CheckField(
+		validator.NotBlank(form.NewPassword),
+		"new_password",
+		"This field cannot be blank",
+	)
+	form.CheckField(
+		validator.MinLen(form.NewPassword, 8),
+		"new_password",
+		"This field must be at least 8 characters long",
+	)
+	form.CheckField(
+		validator.NotBlank(form.ConfirmPassword),
+		"confirm_password",
+		"This field cannot be blank",
+	)
+	form.CheckField(
+		validator.PermittedValue(form.ConfirmPassword, form.NewPassword),
+		"confirm_password",
+		"This field must be same as New Password",
+	)
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusBadRequest, "update_password.tmpl.html", data)
+		return
+	}
+
+	userId := app.sessionManager.GetInt(r.Context(), "authenticatedUserId")
+	err = app.users.UpdatePassword(userId, form.CurrentPassword, form.NewPassword)
+	if err!=nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddFieldError("current_password", "Current password is incorrect")
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, http.StatusBadRequest, "update_password.tmpl.html", data)
+			return
+		}
+		app.serverError(w, err)
+		return
+	}
+	app.sessionManager.Put(r.Context(), "flash", "Password updated successfully")
+	http.Redirect(w, r, "/user/account", http.StatusSeeOther)
+}
