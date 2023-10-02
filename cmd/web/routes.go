@@ -5,6 +5,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
+	"snippetbox.anukuljoshi/ui"
 )
 
 // returns a servemux containing our application routes
@@ -17,10 +18,11 @@ func (app *application) routes() http.Handler {
 		app.notFound(w)
 	})
 
-	// create a file server for serving static files
-	fileServer := http.FileServer(http.Dir("./ui/static"))
+	// take ui.Files embedded file system and convert it to http.FS
+	// create fileserver handler with ui.Files file system
+	fileServer := http.FileServer(http.FS(ui.Files))
 	// create route to server static files
-	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
 
 	// create new middleware chain for dynamic routes
 	var dynamic = alice.New(app.sessionManager.LoadAndSave, app.noSurf, app.authenticate)
