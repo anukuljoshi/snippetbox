@@ -15,6 +15,7 @@ type templateData struct {
 	Snippets []*models.Snippet
 	Form any
 	Flash any
+	IsAuthenticated bool
 }
 
 func (app *application) newTemplateData(r *http.Request) *templateData {
@@ -22,6 +23,7 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 		CurrentYear: time.Now().Year(),
 		// add flash message if it exists
 		Flash: app.sessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: app.isAuthenticated(r),
 	}
 }
 

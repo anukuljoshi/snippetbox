@@ -24,18 +24,20 @@ func (app *application) routes() http.Handler {
 
 	// create new middleware chain for dynamic routes
 	var dynamic = alice.New(app.sessionManager.LoadAndSave)
-	// other application routes
+
+	// unprotected application routes
 	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
 	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.viewSnippet))
-	router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.createSnippet))
-	router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.createSnippetPost))
-
-	// user routes
 	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignUp))
 	router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignUpPost))
 	router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
 	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
-	router.Handler(http.MethodPost, "/user/logout", dynamic.ThenFunc(app.userLogoutPost))
+
+	var protected = dynamic.Append(app.requireAuthentication)
+	// protected routes
+	router.Handler(http.MethodGet, "/snippet/create", protected.ThenFunc(app.createSnippet))
+	router.Handler(http.MethodPost, "/snippet/create", protected.ThenFunc(app.createSnippetPost))
+	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
 
 	// middleware chain with our standard middlewares
 	// which will be used for every request
