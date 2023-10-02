@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/justinas/nosurf"
 	"snippetbox.anukuljoshi/internals/models"
 )
 
@@ -16,6 +17,7 @@ type templateData struct {
 	Form any
 	Flash any
 	IsAuthenticated bool
+	CSRFToken string
 }
 
 func (app *application) newTemplateData(r *http.Request) *templateData {
@@ -24,6 +26,7 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 		// add flash message if it exists
 		Flash: app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
+		CSRFToken: nosurf.Token(r),
 	}
 }
 
