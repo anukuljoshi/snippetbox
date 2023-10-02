@@ -20,6 +20,7 @@ import (
 
 // Define an application struct to hold the application-wide dependencies
 type application struct {
+	debug bool
 	errorLog *log.Logger
 	infoLog *log.Logger
 	snippets *models.SnippetModel
@@ -32,6 +33,7 @@ type application struct {
 func main() {
 	// define a new command line flag "addr" to specify to host address
 	addr := flag.String("addr", ":4000", "HTTP network address")
+	debug := flag.Bool("debug", false, "Enable debug mode")
 	flag.Parse()
 
 	// create a new logger for info messages
@@ -71,6 +73,7 @@ func main() {
 
 	// initialize an application struct with dependencies
 	app := &application{
+		debug: *debug,
 		errorLog: errorLog,
 		infoLog: infoLog,
 		snippets: &models.SnippetModel{DB: db},
