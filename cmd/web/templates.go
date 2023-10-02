@@ -34,7 +34,10 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 
 // convert time.Time to human readable format
 func humanDate(t time.Time) string {
-	return t.Format("02 Jan 2006 at 03:04PM")
+	if t.IsZero() {
+		return ""
+	}
+	return t.UTC().Format("02 Jan 2006 at 15:04")
 }
 
 // initialize template.FuncMap object and store in global variable
